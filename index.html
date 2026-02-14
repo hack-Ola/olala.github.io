@@ -3,282 +3,185 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>جمرة غضى</title>
+<title>لعبة الذاكرة - روم مشعل</title>
 
 <style>
+
 body{
     margin:0;
-    font-family:'Segoe UI', sans-serif;
+    font-family: Arial, sans-serif;
     background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    color:#f5f5f5;
+    color:white;
     text-align:center;
 }
 
+/* العنوان */
 h1{
     margin-top:20px;
-    font-weight:600;
-    letter-spacing:1px;
 }
 
-.controls{
-    margin:20px;
-}
-
+/* زر البداية */
 button{
-    padding:10px 20px;
+    padding:12px 25px;
     border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:linear-gradient(45deg,#c9a227,#f5d76e);
+    border-radius:10px;
+    background:linear-gradient(45deg,#d4af37,#f9e076);
     font-weight:bold;
-    color:#1a1a1a;
-    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    cursor:pointer;
+    margin:15px;
 }
 
-input, select{
-    padding:5px;
-    border-radius:6px;
-    border:none;
-    margin:5px;
-}
-
-#game-board{
+/* شبكة البطاقات */
+.game-board{
     display:grid;
-    gap:18px;
-    justify-content:center;
-    margin:25px auto;
-    max-width:750px;
+    grid-template-columns:repeat(auto-fit,minmax(90px,1fr));
+    gap:12px;
+    padding:15px;
+    max-width:600px;
+    margin:auto;
 }
 
-/* الكرت */
+/* شكل الكرت */
 .card{
-    width:150px;
-    height:210px;
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
     perspective:1000px;
+    cursor:pointer;
 }
 
+/* حركة القلب */
 .card-inner{
+    position:absolute;
     width:100%;
     height:100%;
-    position:relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s;
+    transition:transform 0.6s;
+    transform-style:preserve-3d;
 }
 
 .card.flipped .card-inner{
-    transform: rotateY(180deg);
+    transform:rotateY(180deg);
 }
 
+/* الوجهين */
 .card-front, .card-back{
     position:absolute;
     width:100%;
     height:100%;
-    border-radius:18px;
     backface-visibility:hidden;
-    box-shadow:0 8px 20px rgba(0,0,0,0.45);
-}
-
-/* الوجه الأمامي */
-.card-front{
-    background:linear-gradient(145deg,#ffffff,#f1f1f1);
-    border:3px solid #d4af37;
+    border-radius:15px;
     display:flex;
     align-items:center;
     justify-content:center;
-    flex-direction:column;
-    position:relative;
-}
-
-/* تاج */
-.card-front::before{
-    content:"👑";
-    font-size:22px;
-    position:absolute;
-    top:12px;
-}
-
-/* اسم Ola */
-.card-front span{
-    font-size:32px;
+    font-size:28px;
     font-weight:bold;
-    color:#1c2b36;
-    letter-spacing:1px;
 }
 
-/* الخلف */
+/* وجه الخلفية */
+.card-front{
+    background:white;
+    color:#2a5298;
+    border:4px solid #d4af37;
+}
+
+/* وجه الصورة */
 .card-back{
-    transform: rotateY(180deg);
-    background:linear-gradient(145deg,#1c2b36,#2e4a5a);
-    border:3px solid #d4af37;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
+    background:#fff;
+    transform:rotateY(180deg);
+    border:4px solid #d4af37;
 }
 
-/* قلب زخرفي */
-.card-back::before{
-    content:"♥";
-    font-size:70px;
-    color:rgba(255,255,255,0.06);
-    position:absolute;
-}
-
-/* الصورة */
+/* الصورة داخل الكرت */
 .card-back img{
-    width:85%;
-    height:85%;
-    object-fit:contain;
+    width:100%;
+    height:100%;
+    object-fit:cover;
     border-radius:12px;
-    z-index:2;
 }
 
-#scoreboard{
-    margin-top:10px;
-    font-size:18px;
-}
 </style>
 </head>
-
 <body>
 
-<h1>🃏 لعبة الذاكرة - جمرة غضى</h1>
-
-<div class="controls">
-عدد اللاعبين:
-<input type="number" id="playersCount" value="2" min="1" max="6">
-
-المستوى:
-<select id="difficulty">
-<option value="8">سهل (8)</option>
-<option value="12">متوسط (12)</option>
-<option value="16">صعب (16)</option>
-</select>
-
+<h1>🎮 لعبة الذاكرة</h1>
 <button onclick="startGame()">ابدأ اللعبة</button>
-</div>
 
-<div id="scoreboard"></div>
-<h3 id="turn"></h3>
-
-<div id="game-board"></div>
+<div class="game-board" id="gameBoard"></div>
 
 <script>
 
-let players=[];
-let currentPlayer=0;
-let flippedCards=[];
-let matchedPairs=0;
-let totalPairs=8;
-
-const images=[
+const images = [
 "https://e.top4top.io/p_3697mlg9s2.png",
 "https://picsum.photos/300?1",
 "https://picsum.photos/300?2",
 "https://picsum.photos/300?3",
 "https://picsum.photos/300?4",
-"https://picsum.photos/300?5",
-"https://picsum.photos/300?6",
-"https://picsum.photos/300?7",
-"https://picsum.photos/300?8",
-"https://picsum.photos/300?9",
-"https://picsum.photos/300?10",
-"https://picsum.photos/300?11",
-"https://picsum.photos/300?12",
-"https://picsum.photos/300?13",
-"https://picsum.photos/300?14",
-"https://picsum.photos/300?15"
+"https://picsum.photos/300?5"
 ];
 
+let cards = [];
+let firstCard = null;
+let secondCard = null;
+let lockBoard = false;
+
 function startGame(){
-    const count=parseInt(document.getElementById("playersCount").value);
-    totalPairs=parseInt(document.getElementById("difficulty").value);
-
-    players=[];
-    for(let i=0;i<count;i++){
-        players.push({score:0});
-    }
-
-    currentPlayer=0;
-    matchedPairs=0;
-    flippedCards=[];
-    createBoard();
-    updateScore();
-}
-
-function createBoard(){
-    const board=document.getElementById("game-board");
+    const board = document.getElementById("gameBoard");
     board.innerHTML="";
-    board.style.gridTemplateColumns=`repeat(${Math.ceil(Math.sqrt(totalPairs*2))}, 1fr)`;
+    cards = [...images, ...images];
+    cards.sort(()=>0.5 - Math.random());
 
-    let selected=images.slice(0,totalPairs);
-    let cards=[...selected,...selected];
-    cards.sort(()=>0.5-Math.random());
+    cards.forEach(src=>{
+        const card = document.createElement("div");
+        card.classList.add("card");
 
-    cards.forEach(img=>{
-        const card=document.createElement("div");
-        card.className="card";
-        card.dataset.value=img;
-
-        card.innerHTML=`
+        card.innerHTML = `
         <div class="card-inner">
-            <div class="card-front">
-                <span>Ola</span>
-            </div>
+            <div class="card-front">👑</div>
             <div class="card-back">
-                <img src="${img}">
+                <img src="${src}">
             </div>
-        </div>`;
+        </div>
+        `;
 
-        card.onclick=()=>flipCard(card);
+        card.addEventListener("click", flipCard);
         board.appendChild(card);
     });
 }
 
-function flipCard(card){
-    if(flippedCards.length<2 && !card.classList.contains("flipped")){
-        card.classList.add("flipped");
-        flippedCards.push(card);
+function flipCard(){
+    if(lockBoard) return;
+    if(this === firstCard) return;
+
+    this.classList.add("flipped");
+
+    if(!firstCard){
+        firstCard = this;
+        return;
     }
 
-    if(flippedCards.length===2){
-        setTimeout(checkMatch,800);
-    }
+    secondCard = this;
+    checkMatch();
 }
 
 function checkMatch(){
-    const [c1,c2]=flippedCards;
+    const img1 = firstCard.querySelector("img").src;
+    const img2 = secondCard.querySelector("img").src;
 
-    if(c1.dataset.value===c2.dataset.value){
-        players[currentPlayer].score++;
-        matchedPairs++;
+    if(img1 === img2){
+        resetBoard();
     }else{
-        c1.classList.remove("flipped");
-        c2.classList.remove("flipped");
-        currentPlayer=(currentPlayer+1)%players.length;
-    }
-
-    flippedCards=[];
-    updateScore();
-
-    if(matchedPairs===totalPairs){
-        endGame();
+        lockBoard = true;
+        setTimeout(()=>{
+            firstCard.classList.remove("flipped");
+            secondCard.classList.remove("flipped");
+            resetBoard();
+        },1000);
     }
 }
 
-function updateScore(){
-    let html="";
-    players.forEach((p,i)=>{
-        html+=`اللاعب ${i+1}: ${p.score} | `;
-    });
-    document.getElementById("scoreboard").innerHTML=html;
-    document.getElementById("turn").innerText="دور اللاعب "+(currentPlayer+1);
-}
-
-function endGame(){
-    let max=Math.max(...players.map(p=>p.score));
-    let winner=players.findIndex(p=>p.score===max);
-    alert("🏆 الفائز اللاعب "+(winner+1));
+function resetBoard(){
+    [firstCard, secondCard] = [null, null];
+    lockBoard = false;
 }
 
 </script>
