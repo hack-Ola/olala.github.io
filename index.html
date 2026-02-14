@@ -3,21 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>جمرة غضى - لعبة الذاكرة</title>
+<title>جمرة غضى - إصدار رمضان 🌙</title>
 
 <style>
+
 body{
     margin:0;
-    font-family:Arial, sans-serif;
-    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    font-family: 'Arial', sans-serif;
+    background: radial-gradient(circle at top,#0b1d3a,#071224 70%);
     color:white;
     text-align:center;
+    overflow-x:hidden;
+}
+
+/* نجوم خفيفة */
+body::after{
+    content:"";
+    position:fixed;
+    width:100%;
+    height:100%;
+    background-image:
+    radial-gradient(white 1px, transparent 1px);
+    background-size:3px 3px;
+    opacity:0.08;
+    pointer-events:none;
 }
 
 /* العنوان */
 h1{
     margin-top:20px;
     font-size:28px;
+    color:#ffd700;
+    text-shadow:0 0 10px #d4af37;
 }
 
 /* لوحة التحكم */
@@ -86,15 +103,16 @@ button{
 }
 
 .card-front{
-    background:white;
-    color:#2a5298;
-    border:4px solid #d4af37;
+    background:linear-gradient(145deg,#102a43,#0b3d2e);
+    color:#ffd700;
+    border:3px solid #d4af37;
+    box-shadow:0 0 12px rgba(255,215,0,0.4);
 }
 
 .card-back{
     background:#fff;
     transform:rotateY(180deg);
-    border:4px solid #d4af37;
+    border:3px solid #d4af37;
 }
 
 .card-back img{
@@ -109,12 +127,26 @@ button{
     font-size:20px;
     margin-top:15px;
     color:#ffd700;
+    text-shadow:0 0 10px gold;
 }
+
+/* هلال زخرفي */
+.moon{
+    position:fixed;
+    top:20px;
+    left:20px;
+    font-size:40px;
+    color:#ffd700;
+    text-shadow:0 0 15px gold;
+}
+
 </style>
 </head>
 <body>
 
-<h1>🔥 جمرة غضى - لعبة الذاكرة 🔥</h1>
+<div class="moon">🌙</div>
+
+<h1>✨ جمرة غضى - إصدار رمضان ✨</h1>
 
 <div class="controls">
     <input type="text" id="playerName" placeholder="اسم اللاعب">
@@ -171,7 +203,7 @@ function startGame(){
 
         card.innerHTML = `
         <div class="card-inner">
-            <div class="card-front">👑</div>
+            <div class="card-front">🌙</div>
             <div class="card-back">
                 <img src="${src}">
             </div>
@@ -223,7 +255,7 @@ function checkMatch(){
 function showWinner(){
     const name = document.getElementById("playerName").value || "البطل";
     document.getElementById("winnerMessage").innerHTML =
-    `🏆 مبروك ${name} ! لقد فزت في جمرة غضى 🔥`;
+    `🌟 مبروك يا ${name} 🌙🔥  جمرة غضى  ✨`;
 }
 
 function resetBoard(){
@@ -234,4 +266,4 @@ function resetBoard(){
 </script>
 
 </body>
-</html></html>
+</html></html></html>
