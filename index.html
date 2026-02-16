@@ -230,20 +230,45 @@ function flipCard(index,cards,turn){
     });
 }
 
-function checkMatch(cards,ids,turn){
-    let [a,b]=flippedLocal;
-    if(cards[a].value===cards[b].value){
-        db.ref("room/cards/"+a).update({matched:true});
-        db.ref("room/cards/"+b).update({matched:true});
-        db.ref("room/players/"+ids[turn]+"/score")
-        .transaction(score=>score+1);
-    }else{
-        db.ref("room/cards/"+a).update({flipped:false});
-        db.ref("room/cards/"+b).update({flipped:false});
-        db.ref("room").update({turn:(turn+1)%ids.length});
-    }
-    flippedLocal=[];
+function checkMatch(cardsSnapshot,ids,turn){
+
+    db.ref("room/cards").once("value").then(snap=>{
+
+        const cards = snap.val();
+        let [a,b] = flippedLocal;
+
+        if(!cards[a] || !cards[b]) return;
+
+        if(cards[a].value === cards[b].value){
+
+            db.ref("room/cards/"+a).update({
+                matched:true,
+                flipped:true
+            });
+
+            db.ref("room/cards/"+b).update({
+                matched:true,
+                flipped:true
+            });
+
+            db.ref("room/players/"+ids[turn]+"/score")
+            .transaction(score => (score||0) + 1);
+
+        }else{
+
+            db.ref("room/cards/"+a).update({flipped:false});
+            db.ref("room/cards/"+b).update({flipped:false});
+
+            db.ref("room").update({
+                turn:(turn+1) % ids.length
+            });
+        }
+
+        flippedLocal=[];
+
+    });
 }
+
 </script>
 </body>
 </html>
