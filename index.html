@@ -1,230 +1,151 @@
-
+<!DOCTYPE html>
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> لعبة الذاكرة -روم مشعل </title>
+<title>Ola Cards - غرفة جماعية</title>
 
 <style>
 body{
-    margin:0;
-    font-family: Arial;
-    background: linear-gradient(135deg,#1e3c72,#2a5298);
-    color:white;
-    text-align:center;
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+text-align:center;
 }
 
-h1{
-    margin-top:20px;
-}
-
-.controls{
-    margin:20px;
-}
-
-button{
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:#ffcc00;
-    font-weight:bold;
-}
+h1{margin-top:20px;}
 
 #game-board{
-    display:grid;
-    gap:15px;
-    justify-content:center;
-    margin:20px;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+justify-content:center;
+margin:20px;
 }
 
 .card{
-    width:100px;
-    height:130px;
-    perspective:1000px;
+width:110px;
+height:140px;
+perspective:1000px;
+cursor:pointer;
 }
 
 .card-inner{
-    width:100%;
-    height:100%;
-    position:relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s;
+width:100%;
+height:100%;
+position:relative;
+transform-style:preserve-3d;
+transition:transform 0.6s;
 }
 
 .card.flipped .card-inner{
-    transform: rotateY(180deg);
+transform:rotateY(180deg);
 }
 
-.card-front, .card-back{
-    position:absolute;
-    width:100%;
-    height:100%;
-    backface-visibility:hidden;
-    border-radius:12px;
+.card-front,.card-back{
+position:absolute;
+width:100%;
+height:100%;
+backface-visibility:hidden;
+border-radius:12px;
+overflow:hidden;
 }
 
 .card-front{
-    background:#ffcc70;
+background:#ffcc00;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+font-size:20px;
+color:#333;
 }
 
 .card-back{
-    transform: rotateY(180deg);
-    background:white;
+transform:rotateY(180deg);
+background:white;
 }
 
 .card-back img{
-    width:100%;
-    height:100%;
-    border-radius:12px;
-}
-
-#scoreboard{
-    margin-top:10px;
-    font-size:18px;
+width:100%;
+height:100%;
+object-fit:cover;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🧠 لعبة الذاكرة - جمرة غضى</h1>
-
-<div class="controls">
-عدد اللاعبين:
-<input type="number" id="playersCount" value="2" min="1" max="6">
-
-المستوى:
-<select id="difficulty">
-<option value="8">سهل (8 )</option>
-<option value="12">متوسط (12 )</option>
-<option value="16">صعب (16 )</option>
-  <option value="16">(30 )متقدم</option>
-</select>
-
-<button onclick="startGame()">ابدأ اللعبة</button>
-</div>
-
-<div id="scoreboard"></div>
-<h3 id="turn"></h3>
-
+<h1> Ola Cards - جمرة غضى</h1>
 <div id="game-board"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 
-let players=[];
-let currentPlayer=0;
-let flippedCards=[];
-let matchedPairs=0;
-let totalPairs=8;
+const firebaseConfig = {
+  apiKey: "AIzaSyD6uCfq2o4zaimOqjz-_tVkukpgLp7rZIQ",
+  authDomain: "ola-cards.firebaseapp.com",
+  databaseURL: "https://ola-cards-default-rtdb.firebaseio.com",
+  projectId: "ola-cards",
+  storageBucket: "ola-cards.firebasestorage.app",
+  messagingSenderId: "40775529581",
+  appId: "1:40775529581:web:8040ea60cba212401afb64"
+};
 
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
+// صور جميلة (مدن وقهوة)
 const images=[
-"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400",
-"https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-"https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=400",
-"https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400",
-"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400",
-"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
-"https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400",
-"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400",
-"https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400",
-"https://images.unsplash.com/photo-1526481280691-7819c8d9f3e6?w=400",
-"https://images.unsplash.com/photo-1482192505345-5655af888cc4?w=400",
-"https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400",
-"https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=400",
-"https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400",
-"https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=400",
-"https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=400"
+"https://source.unsplash.com/300x300/?paris,city",
+"https://source.unsplash.com/300x300/?dubai,skyline",
+"https://source.unsplash.com/300x300/?rome,architecture",
+"https://source.unsplash.com/300x300/?london,city",
+"https://source.unsplash.com/300x300/?coffee,cup",
+"https://source.unsplash.com/300x300/?cafe,interior",
+"https://source.unsplash.com/300x300/?mountains,landscape",
+"https://source.unsplash.com/300x300/?sunset,nature"
 ];
 
-function startGame(){
-    const count=parseInt(document.getElementById("playersCount").value);
-    totalPairs=parseInt(document.getElementById("difficulty").value);
-
-    players=[];
-    for(let i=0;i<count;i++){
-        players.push({score:0});
-    }
-
-    currentPlayer=0;
-    matchedPairs=0;
-    flippedCards=[];
-    createBoard();
-    updateScore();
+database.ref("room").once("value",snapshot=>{
+if(!snapshot.exists()){
+let cards=[...images,...images];
+cards.sort(()=>0.5-Math.random());
+database.ref("room").set({
+cards:cards.map(c=>({value:c,flipped:false}))
+});
 }
+});
 
-function createBoard(){
-    const board=document.getElementById("game-board");
-    board.innerHTML="";
-    board.style.gridTemplateColumns=`repeat(${Math.sqrt(totalPairs*2)}, 1fr)`;
+database.ref("room/cards").on("value",snapshot=>{
+const board=document.getElementById("game-board");
+board.innerHTML="";
+snapshot.val().forEach((card,i)=>{
+let div=document.createElement("div");
+div.className="card"+(card.flipped?" flipped":"");
 
-    let selected=images.slice(0,totalPairs);
-    let cards=[...selected,...selected];
-    cards.sort(()=>0.5-Math.random());
+div.innerHTML=`
+<div class="card-inner">
+<div class="card-front">Ola</div>
+<div class="card-back">
+<img src="${card.value}">
+</div>
+</div>`;
 
-    cards.forEach(img=>{
-        const card=document.createElement("div");
-        card.className="card";
-        card.dataset.value=img;
+div.onclick=()=>flipCard(i,card.flipped);
+board.appendChild(div);
+});
+});
 
-        card.innerHTML=`
-        <div class="card-inner">
-            <div class="card-front">Ola</div>
-            <div class="card-back">
-                <img src="${img}">
-            </div>
-        </div>`;
+function flipCard(index,alreadyFlipped){
+if(alreadyFlipped) return;
 
-        card.onclick=()=>flipCard(card);
-        board.appendChild(card);
-    });
-}
-
-function flipCard(card){
-    if(flippedCards.length<2 && !card.classList.contains("flipped")){
-        card.classList.add("flipped");
-        flippedCards.push(card);
-    }
-
-    if(flippedCards.length===2){
-        setTimeout(checkMatch,800);
-    }
-}
-
-function checkMatch(){
-    const [c1,c2]=flippedCards;
-
-    if(c1.dataset.value===c2.dataset.value){
-        players[currentPlayer].score++;
-        matchedPairs++;
-    }else{
-        c1.classList.remove("flipped");
-        c2.classList.remove("flipped");
-        currentPlayer=(currentPlayer+1)%players.length;
-    }
-
-    flippedCards=[];
-    updateScore();
-
-    if(matchedPairs===totalPairs){
-        endGame();
-    }
-}
-
-function updateScore(){
-    let html="";
-    players.forEach((p,i)=>{
-        html+=`اللاعب ${i+1}: ${p.score} | `;
-    });
-    document.getElementById("scoreboard").innerHTML=html;
-    document.getElementById("turn").innerText="دور اللاعب "+(currentPlayer+1);
-}
-
-function endGame(){
-    let max=Math.max(...players.map(p=>p.score));
-    let winner=players.findIndex(p=>p.score===max);
-    alert("🏆 الفائز  "+(winner+1));
+database.ref("room/cards/"+index).update({
+flipped:true
+});
 }
 
 </script>
