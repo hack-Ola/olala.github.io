@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ola Cards - لعبة الذاكرة</title>
+<title>Ola Cards - Online</title>
 
 <style>
 body{
     margin:0;
     font-family:'Segoe UI', Arial;
-    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    background:linear-gradient(135deg,#1e3c72,#2a5298);
     color:white;
     text-align:center;
 }
@@ -17,24 +17,8 @@ body{
 h1{
     margin:25px 0;
     font-size:28px;
-    font-weight:600;
-    letter-spacing:1px;
 }
 
-.controls{
-    margin:15px;
-}
-
-button{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:#ffcc00;
-    font-weight:bold;
-}
-
-/* الشبكة */
 #game-board{
     display:grid;
     gap:18px;
@@ -43,28 +27,14 @@ button{
     margin:auto;
 }
 
-/* 📱 موبايل */
 @media (max-width:768px){
-    #game-board{
-        grid-template-columns:repeat(3,1fr);
-    }
+    #game-board{ grid-template-columns:repeat(3,1fr); }
 }
 
-/* 💻 تابلت */
-@media (min-width:769px) and (max-width:1024px){
-    #game-board{
-        grid-template-columns:repeat(4,1fr);
-    }
+@media (min-width:769px){
+    #game-board{ grid-template-columns:repeat(4,1fr); }
 }
 
-/* 🖥 شاشة كبيرة */
-@media (min-width:1025px){
-    #game-board{
-        grid-template-columns:repeat(5,1fr);
-    }
-}
-
-/* الكرت */
 .card{
     width:100%;
     aspect-ratio:3/4;
@@ -77,7 +47,7 @@ button{
     height:100%;
     position:relative;
     transform-style:preserve-3d;
-    transition:transform 0.9s cubic-bezier(.4,.2,.2,1);
+    transition:transform 0.8s ease;
 }
 
 .card.flipped .card-inner{
@@ -95,18 +65,16 @@ button{
     box-shadow:0 15px 35px rgba(0,0,0,0.4);
 }
 
-/* الوجه الأمامي */
 .card-front{
-    background:linear-gradient(145deg,#ffd84d,#ffcc00);
+    background:#ffcc00;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:24px;
-    font-weight:800;
+    font-size:22px;
+    font-weight:bold;
     color:#333;
 }
 
-/* الخلف */
 .card-back{
     transform:rotateY(180deg);
     background:white;
@@ -118,51 +86,42 @@ button{
     object-fit:cover;
 }
 
-#scoreboard{
-    margin-top:10px;
-    font-size:18px;
+button{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#ffcc00;
+    font-weight:bold;
+    margin-bottom:15px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎮 Ola Cards</h1>
-
-<div class="controls">
-عدد اللاعبين:
-<input type="number" id="playersCount" value="2" min="1" max="6">
-
-المستوى:
-<select id="difficulty">
-<option value="6">سهل</option>
-<option value="8">متوسط</option>
-<option value="10">صعب</option>
-<option value="12">متقدم</option>
-</select>
-
-<button onclick="startGame()">ابدأ اللعبة</button>
-</div>
-
-<div id="scoreboard"></div>
-<h3 id="turn"></h3>
-
+<h1> Ola Cards - جمرة غضى </h1>
+<button onclick="resetGame()">إعادة اللعبة للجميع</button>
 <div id="game-board"></div>
 
-<!-- 🔊 صوت القلب -->
-<audio id="flipSound" preload="auto">
-<source src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" type="audio/mpeg">
-</audio>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 
-let players=[];
-let currentPlayer=0;
-let flippedCards=[];
-let matchedPairs=0;
-let totalPairs=6;
+const firebaseConfig = {
+  apiKey: "AIzaSyD6uCfq2o4zaimOqjz-_tVkukpgLp7rZIQ",
+  authDomain: "ola-cards.firebaseapp.com",
+  databaseURL: "https://ola-cards-default-rtdb.firebaseio.com",
+  projectId: "ola-cards",
+  storageBucket: "ola-cards.firebasestorage.app",
+  messagingSenderId: "40775529581",
+  appId: "1:40775529581:web:8040ea60cba212401afb64"
+};
 
-/* صور ثابتة */
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 const images=[
 "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400",
 "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
@@ -171,105 +130,54 @@ const images=[
 "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400",
 "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
 "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400",
-"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400",
-"https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400",
-"https://images.unsplash.com/photo-1526481280691-7819c8d9f3e6?w=400",
-"https://images.unsplash.com/photo-1482192505345-5655af888cc4?w=400",
-"https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400"
+"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400"
 ];
 
-function startGame(){
-    const count=parseInt(document.getElementById("playersCount").value);
-    totalPairs=parseInt(document.getElementById("difficulty").value);
-
-    players=[];
-    for(let i=0;i<count;i++){
-        players.push({score:0});
-    }
-
-    currentPlayer=0;
-    matchedPairs=0;
-    flippedCards=[];
-    createBoard();
-    updateScore();
-}
-
-function createBoard(){
-    const board=document.getElementById("game-board");
-    board.innerHTML="";
-
-    let selected=images.slice(0,totalPairs);
-    let cards=[...selected,...selected];
+function createGame(){
+    let cards=[...images,...images];
     cards.sort(()=>0.5-Math.random());
 
-    cards.forEach(img=>{
-        const card=document.createElement("div");
-        card.className="card";
-        card.dataset.value=img;
+    database.ref("room").set({
+        cards:cards.map(c=>({value:c,flipped:false}))
+    });
+}
 
-        card.innerHTML=`
+function resetGame(){
+    createGame();
+}
+
+database.ref("room").once("value",snapshot=>{
+    if(!snapshot.exists()){
+        createGame();
+    }
+});
+
+database.ref("room/cards").on("value",snapshot=>{
+    const board=document.getElementById("game-board");
+    board.innerHTML="";
+    snapshot.val().forEach((card,i)=>{
+        let div=document.createElement("div");
+        div.className="card"+(card.flipped?" flipped":"");
+
+        div.innerHTML=`
         <div class="card-inner">
             <div class="card-front">Ola</div>
             <div class="card-back">
-                <img src="${img}">
+                <img src="${card.value}">
             </div>
         </div>`;
 
-        card.onclick=()=>flipCard(card);
-        board.appendChild(card);
+        div.onclick=()=>flipCard(i,card.flipped);
+        board.appendChild(div);
     });
-}
+});
 
-function flipCard(card){
-    if(flippedCards.length<2 && !card.classList.contains("flipped")){
-        card.classList.add("flipped");
+function flipCard(index,alreadyFlipped){
+    if(alreadyFlipped) return;
 
-        // تشغيل الصوت
-        const sound = document.getElementById("flipSound");
-        sound.currentTime = 0;
-        sound.play();
-
-        flippedCards.push(card);
-    }
-
-    if(flippedCards.length===2){
-        setTimeout(checkMatch,900);
-    }
-}
-
-function checkMatch(){
-    const [c1,c2]=flippedCards;
-
-    if(c1.dataset.value===c2.dataset.value){
-        players[currentPlayer].score++;
-        matchedPairs++;
-    }else{
-        c1.classList.remove("flipped");
-        c2.classList.remove("flipped");
-        currentPlayer=(currentPlayer+1)%players.length;
-    }
-
-    flippedCards=[];
-    updateScore();
-
-    if(matchedPairs===totalPairs){
-        endGame();
-    }
-}
-
-function updateScore(){
-    let html="";
-    players.forEach((p,i)=>{
-        html+=`اللاعب ${i+1}: ${p.score} | `;
+    database.ref("room/cards/"+index).update({
+        flipped:true
     });
-    document.getElementById("scoreboard").innerHTML=html;
-    document.getElementById("turn").innerText="دور اللاعب "+(currentPlayer+1);
-}
-
-function endGame(){
-    let max=Math.max(...players.map(p=>p.score));
-    let winner=players.findIndex(p=>p.score===max);
-    alert("🏆 الفائز "+(winner+1));
 }
 
 </script>
