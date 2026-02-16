@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لعبة الذاكرة الجماعية</title>
+<title>Ola Cards - غرفة جماعية</title>
 
 <style>
 body{
@@ -14,21 +14,19 @@ color:white;
 text-align:center;
 }
 
-h1{
-margin-top:20px;
-}
+h1{margin-top:20px;}
 
 #game-board{
 display:grid;
 grid-template-columns:repeat(4,1fr);
-gap:12px;
+gap:15px;
 justify-content:center;
 margin:20px;
 }
 
 .card{
-width:100px;
-height:120px;
+width:110px;
+height:140px;
 perspective:1000px;
 cursor:pointer;
 }
@@ -38,7 +36,7 @@ width:100%;
 height:100%;
 position:relative;
 transform-style:preserve-3d;
-transition:0.6s;
+transition:transform 0.6s;
 }
 
 .card.flipped .card-inner{
@@ -50,30 +48,38 @@ position:absolute;
 width:100%;
 height:100%;
 backface-visibility:hidden;
-border-radius:10px;
+border-radius:12px;
+overflow:hidden;
 }
 
 .card-front{
-background:#ffcc70;
+background:#ffcc00;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+font-size:20px;
+color:#333;
 }
 
 .card-back{
 transform:rotateY(180deg);
 background:white;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:30px;
+}
+
+.card-back img{
+width:100%;
+height:100%;
+object-fit:cover;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎮 غرفة جماعية مباشرة</h1>
+<h1>🎮 Ola Cards - غرفة جماعية</h1>
 <div id="game-board"></div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -92,23 +98,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-const images=["🌍","☕","🏙️","🌅","🏔️","🏜️","🌆","🏛️"];
+// صور جميلة (مدن وقهوة)
+const images=[
+"https://source.unsplash.com/300x300/?paris,city",
+"https://source.unsplash.com/300x300/?dubai,skyline",
+"https://source.unsplash.com/300x300/?rome,architecture",
+"https://source.unsplash.com/300x300/?london,city",
+"https://source.unsplash.com/300x300/?coffee,cup",
+"https://source.unsplash.com/300x300/?cafe,interior",
+"https://source.unsplash.com/300x300/?mountains,landscape",
+"https://source.unsplash.com/300x300/?sunset,nature"
+];
 
-let flipped=[];
-
-// إنشاء اللعبة أول مرة
 database.ref("room").once("value",snapshot=>{
 if(!snapshot.exists()){
 let cards=[...images,...images];
 cards.sort(()=>0.5-Math.random());
-
 database.ref("room").set({
 cards:cards.map(c=>({value:c,flipped:false}))
 });
 }
 });
 
-// الاستماع للتحديثات
 database.ref("room/cards").on("value",snapshot=>{
 const board=document.getElementById("game-board");
 board.innerHTML="";
@@ -118,8 +129,10 @@ div.className="card"+(card.flipped?" flipped":"");
 
 div.innerHTML=`
 <div class="card-inner">
-<div class="card-front"></div>
-<div class="card-back">${card.value}</div>
+<div class="card-front">Ola</div>
+<div class="card-back">
+<img src="${card.value}">
+</div>
 </div>`;
 
 div.onclick=()=>flipCard(i,card.flipped);
