@@ -217,13 +217,21 @@ function renderBoard(cards,turn){
 }
 
 function flipCard(index,cards,turn){
-    if(!myId) return;
-    const playersRef=db.ref("room/players");
-    playersRef.once("value").then(pSnap=>{
-        const ids=Object.keys(pSnap.val());
-        if(ids[turn]!==myId) return;
 
-        if(cards[index].flipped||cards[index].matched) return;
+    if(!myId) return;
+
+    db.ref("room/players").once("value").then(pSnap=>{
+
+        const playersData = pSnap.val();
+        if(!playersData) return;
+
+        const ids = Object.keys(playersData);
+
+        if(ids.length === 0) return;
+
+        if(ids[turn] !== myId) return;
+
+        if(cards[index].flipped || cards[index].matched) return;
 
         db.ref("room/cards/"+index).update({flipped:true});
         flippedLocal.push(index);
@@ -235,6 +243,7 @@ function flipCard(index,cards,turn){
         }
     });
 }
+
 
 function checkMatch(cardsSnapshot,ids,turn){
 
