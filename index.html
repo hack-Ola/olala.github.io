@@ -153,7 +153,10 @@ function createGame(){
     flipped:false,
     matched:false
 }))
-
+     turn:0,
+        players:{}
+    });
+}
 
 db.ref("room").once("value",snap=>{
     if(!snap.exists()){
