@@ -256,38 +256,47 @@ setTimeout(()=>checkMatch(ids,turn),700);
 }
 
 function checkMatch(ids,turn){
-db.ref("room/cards").once("value").then(snap=>{
-const cards=snap.val();
-let[a,b]=flippedLocal;
 
-if(cards[a].value===cards[b].value){
-db.ref("room/cards/"+a).update({matched:true});
-db.ref("room/cards/"+b).update({matched:true});
-db.ref("room/players/"+ids[turn]+"/score")
-.transaction(s=>(s||0)+1);
-}else{
-db.ref("room/cards/"+a).update({flipped:false});
-db.ref("room/cards/"+b).update({flipped:false});
-db.ref("room").update({turn:(turn+1)%ids.length});
+    db.ref("room/cards").once("value").then(snap=>{
+
+        const cards = snap.val();
+        let [a,b] = flippedLocal;
+
+        if(!cards[a] || !cards[b]) return;
+
+        if(cards[a].value === cards[b].value){
+
+            db.ref("room/cards/"+a).update({
+                matched:true,
+                flipped:true
+            });
+
+            db.ref("room/cards/"+b).update({
+                matched:true,
+                flipped:true
+            });
+
+            db.ref("room/players/"+ids[turn]+"/score")
+            .transaction(score => (score||0) + 1);
+
+        }else{
+
+            db.ref("room/cards/"+a).update({flipped:false});
+            db.ref("room/cards/"+b).update({flipped:false});
+
+            db.ref("room").update({
+                turn:(turn+1) % ids.length
+            });
+        }
+
+        flippedLocal=[];
+
+        // 🔥 فحص نهاية اللعبة
+        setTimeout(checkGameEnd, 1000);
+
+    });
 }
-flippedLocal=[];
-});
-}
 
-function checkGameEnd(data){
-if(data.gameOver) return;
-
-const allMatched=data.cards.every(c=>c.matched);
-if(!allMatched) return;
-
-let max=0;
-let winners=[];
-Object.values(data.players).forEach(p=>{
-if(p.score>max) max=p.score;
-});
-Object.values(data.players).forEach(p=>{
-if(p.score===max) winners.push(p.name);
-});
 
 let message="";
 if(winners.length===1){
