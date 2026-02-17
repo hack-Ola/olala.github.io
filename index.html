@@ -18,10 +18,11 @@ h1{margin:20px;}
 
 #loginBox{margin:20px;}
 
-input{
+input, select{
     padding:8px;
     border-radius:6px;
     border:none;
+    margin:5px;
 }
 
 button{
@@ -37,7 +38,7 @@ button{
     display:grid;
     gap:15px;
     padding:20px;
-    max-width:900px;
+    max-width:1000px;
     margin:auto;
 }
 
@@ -104,6 +105,12 @@ button{
 
 <div id="loginBox">
     <input type="text" id="playerName" placeholder="اكتب اسمك">
+    <select id="difficulty">
+        <option value="6">سهل</option>
+        <option value="8">متوسط</option>
+        <option value="10">صعب</option>
+        <option value="12">محترف</option>
+    </select>
     <button onclick="joinGame()">دخول اللعبة</button>
 </div>
 
@@ -135,11 +142,18 @@ const images=[
 "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=400",
 "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400",
 "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400",
-"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400"
+"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
+"https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400",
+"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400",
+"https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400",
+"https://images.unsplash.com/photo-1526481280691-7819c8d9f3e6?w=400",
+"https://images.unsplash.com/photo-1482192505345-5655af888cc4?w=400",
+"https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400"
 ];
 
-function createGame(){
-    let cards=[...images,...images];
+function createGame(level){
+    let selected = images.slice(0, level);
+    let cards=[...selected,...selected];
     cards.sort(()=>0.5-Math.random());
 
     db.ref("room").set({
@@ -149,19 +163,28 @@ function createGame(){
             matched:false
         })),
         turn:0,
-        players:{}
+        players:{},
+        level:level
     });
 }
 
 db.ref("room").once("value",snap=>{
     if(!snap.exists()){
-        createGame();
+        createGame(6);
     }
 });
 
 function joinGame(){
     const name=document.getElementById("playerName").value;
     if(!name) return alert("اكتب اسمك");
+
+    const level=parseInt(document.getElementById("difficulty").value);
+
+    db.ref("room").once("value").then(snap=>{
+        if(!snap.exists()){
+            createGame(level);
+        }
+    });
 
     const ref=db.ref("room/players").push({
         name:name,
@@ -215,7 +238,6 @@ function renderBoard(cards){
 }
 
 function handleFlip(index){
-
     if(!myId) return;
 
     db.ref("room").once("value").then(snap=>{
@@ -230,13 +252,12 @@ function handleFlip(index){
         flippedLocal.push(index);
 
         if(flippedLocal.length===2){
-            setTimeout(()=>{ checkMatch(); },700);
+            setTimeout(checkMatch,700);
         }
     });
 }
 
 function checkMatch(){
-
     db.ref("room").once("value").then(snap=>{
         const data=snap.val();
         const cards=data.cards;
@@ -245,15 +266,12 @@ function checkMatch(){
         let [a,b]=flippedLocal;
 
         if(cards[a].value===cards[b].value){
-
             db.ref("room/cards/"+a).update({matched:true});
             db.ref("room/cards/"+b).update({matched:true});
 
             db.ref("room/players/"+playersOrder[turn]+"/score")
             .transaction(score=>(score||0)+1);
-
         }else{
-
             db.ref("room/cards/"+a).update({flipped:false});
             db.ref("room/cards/"+b).update({flipped:false});
 
@@ -263,33 +281,27 @@ function checkMatch(){
         }
 
         flippedLocal=[];
-
-        // 🔥 فحص نهاية اللعبة
         setTimeout(checkGameEnd,800);
     });
 }
 
 function checkGameEnd(){
-
     db.ref("room").once("value").then(snap=>{
         const data=snap.val();
         if(!data) return;
 
-        const cards=data.cards;
-        const players=data.players;
-
-        const finished = cards.every(c=>c.matched);
+        const finished = data.cards.every(c=>c.matched);
         if(!finished) return;
 
-        let maxScore=0;
+        let max=0;
         let winners=[];
 
-        Object.values(players).forEach(p=>{
-            if(p.score>maxScore) maxScore=p.score;
+        Object.values(data.players).forEach(p=>{
+            if(p.score>max) max=p.score;
         });
 
-        Object.values(players).forEach(p=>{
-            if(p.score===maxScore) winners.push(p.name);
+        Object.values(data.players).forEach(p=>{
+            if(p.score===max) winners.push(p.name);
         });
 
         if(winners.length===1){
